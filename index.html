@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор + Конвертер</title>
+  <style>
+    :root {
+      --bg: #edf2f7;
+      --panel: #ffffff;
+      --panel-alt: #f8fafc;
+      --panel-strong: #e2e8f0;
+      --text: #111827;
+      --text-soft: #4b5563;
+      --muted: #6b7280;
+      --border: #dbe2ea;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      --accent: #4f46e5;
+      --accent-strong: #4338ca;
+      --accent-soft: #eef2ff;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warning: #d97706;
+      --input-bg: #f3f4f6;
+      --button: #f1f5f9;
+      --button-hover: #e2e8f0;
+      --button-press: #cbd5e1;
+      --history-bg: #f8fafc;
+      --history-item: #ffffff;
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-alt: #1f2937;
+      --panel-strong: #0b1220;
+      --text: #e5e7eb;
+      --text-soft: #cbd5e1;
+      --muted: #9ca3af;
+      --border: #2a3348;
+      --shadow: 0 12px 32px rgba(2, 6, 23, 0.5);
+      --accent: #818cf8;
+      --accent-strong: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.15);
+      --danger: #f87171;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --input-bg: #0b1220;
+      --button: #1f2937;
+      --button-hover: #2a3444;
+      --button-press: #374151;
+      --history-bg: #0b1220;
+      --history-item: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgba(79, 70, 229, 0.35);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      width: min(1200px, 100%);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 2vw, 2.2rem);
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+
+    .theme-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .theme-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .theme-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #facc15, #fb7185);
+      position: relative;
+      color: #111827;
+      font-weight: 700;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+
+    .theme-label::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      left: 4px;
+      top: 4px;
+      transition: transform 0.25s ease;
+      box-shadow: 0 2px 8px rgba(17, 24, 39, 0.2);
+    }
+
+    .theme-toggle input:checked + .theme-label::before {
+      transform: translateX(22px);
+      background: #111827;
+    }
+
+    .view-switch {
+      display: inline-flex;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 6px;
+      width: fit-content;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    .view-button {
+      background: transparent;
+      color: var(--text-soft);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-weight: 600;
+      min-width: 150px;
+    }
+
+    .view-button.active {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.12);
+    }
+
+    .view-button:hover {
+      background: var(--button-hover);
+    }
+
+    .view-button:active {
+      transform: translateY(1px);
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .workspace {
+      display: none;
+      padding: 18px;
+      min-height: 620px;
+    }
+
+    .workspace.active {
+      display: block;
+    }
+
+    .calc-display {
+      background: linear-gradient(180deg, var(--panel-alt), var(--panel));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 16px 12px;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      align-items: flex-end;
+      gap: 10px;
+      text-align: right;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .expression {
+      width: 100%;
+      min-height: 26px;
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-soft);
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+
+    .result {
+      width: 100%;
+      font-size: clamp(2.1rem, 4vw, 3.1rem);
+      line-height: 1.1;
+      letter-spacing: -0.05em;
+      font-weight: 700;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .calc-button {
+      min-height: 68px;
+      border-radius: 16px;
+      background: var(--button);
+      color: var(--text);
+      font-weight: 700;
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
+      border: 1px solid var(--border);
+    }
+
+    .calc-button.operator {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .calc-button.action {
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--danger);
+    }
+
+    .calc-button.equals {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 8px 22px rgba(79, 70, 229, 0.35);
+    }
+
+    .calc-button:hover {
+      background: var(--button-hover);
+    }
+
+    .calc-button.operator:hover {
+      background: rgba(99, 102, 241, 0.14);
+    }
+
+    .calc-button.action:hover {
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .calc-button.equals:hover {
+      filter: brightness(1.04);
+    }
+
+    .calc-button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .converter-card {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      height: 100%;
+      min-height: 540px;
+    }
+
+    .converter-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .converter-heading h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .category-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .label-text {
+      display: inline-block;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    select, input {
+      width: 100%;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      min-height: 52px;
+      padding: 12px 14px;
+      font-size: 1rem;
+    }
+
+    .unit-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .unit-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .swap-button {
+      min-width: 54px;
+      align-self: center;
+      min-height: 52px;
+      border-radius: 14px;
+      background: var(--button);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-size: 1.4rem;
+      padding: 0 14px;
+    }
+
+    .swap-button:hover {
+      background: var(--button-hover);
+    }
+
+    .result-box {
+      background: linear-gradient(180deg, var(--panel-alt), var(--panel));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .result-box strong {
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .converter-output {
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .history-panel {
+      background: var(--history-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 620px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .history-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .clear-history {
+      background: transparent;
+      color: var(--text-soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .clear-history:hover {
+      background: var(--button-hover);
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .history-empty {
+      background: var(--panel);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 18px 12px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .history-item {
+      background: var(--history-item);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+    }
+
+    .history-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .history-type {
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 6px 8px;
+    }
+
+    .history-delete {
+      background: transparent;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+    }
+
+    .history-delete:hover {
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.18);
+    }
+
+    .history-expression {
+      color: var(--text-soft);
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .history-result {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .footer {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace,
+      .history-panel {
+        min-height: auto;
+      }
+
+      .unit-row {
+        grid-template-columns: 1fr;
+      }
+
+      .swap-button {
+        width: 100%;
+      }
+
+      .view-button {
+        min-width: 0;
+        flex: 1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 12px;
+      }
+
+      .app-shell {
+        padding: 14px;
+      }
+
+      .topbar {
+        flex-wrap: wrap;
+      }
+
+      .theme-toggle {
+        margin-left: auto;
+      }
+
+      .view-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+      }
+
+      .keypad {
+        gap: 10px;
+      }
+
+      .calc-button {
+        min-height: 58px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1>Калькулятор + Конвертер</h1>
+
+      <label class="theme-toggle" aria-label="Переключить тему">
+        <input id="themeToggle" type="checkbox" />
+        <span class="theme-label" aria-hidden="true"></span>
+      </label>
+    </header>
+
+    <nav class="view-switch" aria-label="Переключение режимов">
+      <button class="view-button active" type="button" data-view="calculator" aria-pressed="true">Калькулятор</button>
+      <button class="view-button" type="button" data-view="converter" aria-pressed="false">Конвертер</button>
+    </nav>
+
+    <main class="main-layout">
+      <section class="panel workspace active" data-panel="calculator" aria-label="Калькулятор">
+        <div class="calc-display">
+          <div id="expressionDisplay" class="expression" aria-live="polite">0</div>
+          <div id="resultDisplay" class="result" aria-live="polite">0</div>
+        </div>
+
+        <div class="keypad" role="group" aria-label="Кнопки калькулятора">
+          <button class="calc-button action" type="button" data-action="clear" aria-label="Полная очистка">C</button>
+          <button class="calc-button action" type="button" data-action="delete" aria-label="Удалить последний символ">⌫</button>
+          <button class="calc-button operator" type="button" data-action="percent" aria-label="Процент">%</button>
+          <button class="calc-button operator" type="button" data-action="operator" data-value="/" aria-label="Деление">÷</button>
+
+          <button class="calc-button" type="button" data-action="digit" data-value="7">7</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="8">8</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="9">9</button>
+          <button class="calc-button operator" type="button" data-action="operator" data-value="*" aria-label="Умножение">×</button>
+
+          <button class="calc-button" type="button" data-action="digit" data-value="4">4</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="5">5</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="6">6</button>
+          <button class="calc-button operator" type="button" data-action="operator" data-value="-" aria-label="Вычитание">−</button>
+
+          <button class="calc-button" type="button" data-action="digit" data-value="1">1</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="2">2</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="3">3</button>
+          <button class="calc-button operator" type="button" data-action="operator" data-value="+" aria-label="Сложение">+</button>
+
+          <button class="calc-button" type="button" data-action="negate" aria-label="Сменить знак">±</button>
+          <button class="calc-button" type="button" data-action="digit" data-value="0">0</button>
+          <button class="calc-button" type="button" data-action="decimal" aria-label="Десятичная точка">.</button>
+          <button class="calc-button equals" type="button" data-action="equals" aria-label="Равно">=</button>
+        </div>
+      </section>
+
+      <section class="panel workspace" data-panel="converter" aria-label="Конвертер">
+        <div class="converter-card">
+          <div class="converter-heading">
+            <h2>Конвертер</h2>
+          </div>
+
+          <div class="category-wrap">
+            <label class="label-text" for="converterCategory">Категория</label>
+            <select id="converterCategory" aria-label="Категория конвертации"></select>
+          </div>
+
+          <div class="unit-row">
+            <div class="unit-box">
+              <label class="label-text" for="fromUnit">Из</label>
+              <select id="fromUnit" aria-label="Единица измерения исходного значения"></select>
+            </div>
+
+            <button class="swap-button" id="swapUnits" type="button" aria-label="Поменять единицы">↔</button>
+
+            <div class="unit-box">
+              <label class="label-text" for="toUnit">В</label>
+              <select id="toUnit" aria-label="Единица измерения результата"></select>
+            </div>
+          </div>
+
+          <div class="category-wrap">
+            <label class="label-text" for="fromValue">Значение</label>
+            <input id="fromValue" type="text" inputmode="decimal" placeholder="Введите число" aria-label="Введите число для конвертации" />
+          </div>
+
+          <div class="result-box">
+            <strong>Результат</strong>
+            <div id="converterResult" class="converter-output" aria-live="polite">Введите число</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel history-panel" aria-label="История действий">
+        <div class="history-header">
+          <h2>История</h2>
+          <button class="clear-history" type="button" id="clearHistory" aria-label="Очистить историю">Очистить</button>
+        </div>
+
+        <div id="historyList" class="history-list" aria-live="polite"></div>
+      </aside>
+    </main>
+
+    <footer class="footer">Калькулятор + Конвертер • 2026</footer>
+  </div>
+
+  <script>
+    (function () {
+      const THEME_KEY = 'calc-converter-theme';
+      const HISTORY_KEY = 'calc-converter-history';
+
+      const categoryMeta = {
+        length: {
+          label: 'Длина',
+          baseUnit: 'm',
+          units: {
+            mm: { label: 'мм', factor: 0.001 },
+            cm: { label: 'см', factor: 0.01 },
+            m: { label: 'м', factor: 1 },
+            km: { label: 'км', factor: 1000 },
+            in: { label: 'дюйм', factor: 0.0254 },
+            ft: { label: 'фут', factor: 0.3048 },
+            mi: { label: 'миля', factor: 1609.344 }
+          }
+        },
+        weight: {
+          label: 'Вес',
+          baseUnit: 'kg',
+          units: {
+            mg: { label: 'мг', factor: 0.000001 },
+            g: { label: 'г', factor: 0.001 },
+            kg: { label: 'кг', factor: 1 },
+            t: { label: 'т', factor: 1000 },
+            oz: { label: 'унция', factor: 0.028349523125 },
+            lb: { label: 'фунт', factor: 0.45359237 }
+          }
+        },
+        temperature: {
+          label: 'Температура',
+          units: {
+            c: { label: '°C' },
+            f: { label: '°F' },
+            k: { label: 'K' }
+          }
+        },
+        volume: {
+          label: 'Объём',
+          baseUnit: 'l',
+          units: {
+            ml: { label: 'мл', factor: 0.001 },
+            l: { label: 'л', factor: 1 },
+            m3: { label: 'м³', factor: 1000 },
+            gal_us: { label: 'галлон США', factor: 3.785411784 }
+          }
+        },
+        speed: {
+          label: 'Скорость',
+          baseUnit: 'm_s',
+          units: {
+            m_s: { label: 'м/с', factor: 1 },
+            km_h: { label: 'км/ч', factor: 0.2777777778 },
+            mph: { label: 'миль/ч', factor: 0.44704 },
+            knot: { label: 'узел', factor: 0.5144444444 }
+          }
+        },
+        currency: {
+          label: 'Валюта',
+          baseUnit: 'usd',
+          units: {
+            usd: { label: 'USD', rate: 1 },
+            eur: { label: 'EUR', rate: 1.08 },
+            rub: { label: 'RUB', rate: 0.011 },
+            gbp: { label: 'GBP', rate: 1.27 },
+            jpy: { label: 'JPY', rate: 0.0064 },
+            cny: { label: 'CNY', rate: 0.138 }
+          }
+        }
+      };
+
+      const state = {
+        theme: localStorage.getItem(THEME_KEY) || 'light',
+        activeView: 'calculator',
+        history: loadHistory()
+      };
+
+      const elements = {
+        body: document.body,
+        themeToggle: document.getElementById('themeToggle'),
+        expressionDisplay: document.getElementById('expressionDisplay'),
+        resultDisplay: document.getElementById('resultDisplay'),
+        calculatorButtons: Array.prototype.slice.call(document.querySelectorAll('.calc-button')),
+        viewButtons: Array.prototype.slice.call(document.querySelectorAll('.view-button')),
+        workspaces: Array.prototype.slice.call(document.querySelectorAll('.workspace')),
+        converterCategory: document.getElementById('converterCategory'),
+        fromUnit: document.getElementById('fromUnit'),
+        toUnit: document.getElementById('toUnit'),
+        fromValue: document.getElementById('fromValue'),
+        converterResult: document.getElementById('converterResult'),
+        swapUnits: document.getElementById('swapUnits'),
+        historyList: document.getElementById('historyList'),
+        clearHistory: document.getElementById('clearHistory')
+      };
+
+      function loadHistory() {
+        try {
+          const raw = localStorage.getItem(HISTORY_KEY);
+          if (!raw) {
+            return [];
+          }
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveHistory() {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
+      }
+
+      function setTheme(themeName) {
+        const isDark = themeName === 'dark';
+        state.theme = themeName;
+        elements.body.classList.toggle('dark', isDark);
+        elements.themeToggle.checked = isDark;
+        localStorage.setItem(THEME_KEY, themeName);
+      }
+
+      function initializeTheme() {
+        setTheme(state.theme);
+      }
+
+      function setActiveView(viewName) {
+        state.activeView = viewName;
+        elements.viewButtons.forEach(function (button) {
+          const isActive = button.dataset.view === viewName;
+          button.classList.toggle('active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+
+        elements.workspaces.forEach(function (panel) {
+          const isActive = panel.dataset.panel === viewName;
+          panel.classList.toggle('active', isActive);
+        });
+      }
+
+      function renderHistory() {
+        elements.historyList.innerHTML = '';
+
+        if (!state.history.length) {
+          const empty = document.createElement('div');
+          empty.className = 'history-empty';
+          empty.textContent = 'Пока нет записей.\nВыполните расчёт или конвертацию.';
+          elements.historyList.appendChild(empty);
+          return;
+        }
+
+        state.history.forEach(function (entry) {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+
+          const header = document.createElement('div');
+          header.className = 'history-item-header';
+
+          const type = document.createElement('span');
+          type.className = 'history-type';
+          type.textContent = entry.type === 'calculator' ? 'Калькулятор' : 'Конвертер';
+
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'history-delete';
+          deleteButton.setAttribute('aria-label', 'Удалить запись');
+          deleteButton.textContent = '×';
+          deleteButton.addEventListener('click', function () {
+            removeHistoryEntry(entry.id);
+          });
+
+          header.appendChild(type);
+          header.appendChild(deleteButton);
+
+          const expr = document.createElement('div');
+          expr.className = 'history-expression';
+          expr.textContent = entry.expression;
+
+          const result = document.createElement('div');
+          result.className = 'history-result';
+          result.textContent = entry.result;
+
+          item.appendChild(header);
+          item.appendChild(expr);
+          item.appendChild(result);
+
+          elements.historyList.appendChild(item);
+        });
+      }
+
+      function addHistoryEntry(entry) {
+        const newEntry = {
+          id: Date.now() + Math.random(),
+          type: entry.type,
+          expression: entry.expression,
+          result: entry.result
+        };
+
+        state.history.unshift(newEntry);
+        state.history = state.history.slice(0, 20);
+        saveHistory();
+        renderHistory();
+      }
+
+      function removeHistoryEntry(id) {
+        state.history = state.history.filter(function (entry) {
+          return entry.id !== id;
+        });
+        saveHistory();
+        renderHistory();
+      }
+
+      function clearHistory() {
+        state.history = [];
+        saveHistory();
+        renderHistory();
+      }
+
+      function formatExpressionForDisplay(expression) {
+        return expression
+          .replace(/\*/g, '×')
+          .replace(/\//g, '÷')
+          .replace(/%/g, '%');
+      }
+
+      function formatNumber(value) {
+        if (!Number.isFinite(value)) {
+          return 'Ошибка';
+        }
+
+        if (Math.abs(value) === 0) {
+          return '0';
+        }
+
+        if (Math.abs(value) >= 1e15 || (Math.abs(value) > 0 && Math.abs(value) < 1e-6)) {
+          const formatted = value.toExponential(6);
+          return formatted.replace(/\.?0+e/, 'e').replace(/e\+/, 'e');
+        }
+
+        const rounded = Number.parseFloat(value.toFixed(10));
+        return String(rounded).replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
+      }
+
+      function formatResultForCalculator(value) {
+        return formatNumber(value);
+      }
+
+      function isOperator(char) {
+        return ['+', '-', '*', '/', '%'].indexOf(char) !== -1;
+      }
+
+      function tokenize(expression) {
+        const tokens = [];
+        let prevType = 'start';
+
+        for (let index = 0; index < expression.length; index += 1) {
+          const char = expression.charAt(index);
+
+          if (/\d/.test(char) || char === '.') {
+            let number = char;
+
+            while (index + 1 < expression.length) {
+              const nextChar = expression.charAt(index + 1);
+              if (/\d/.test(nextChar) || nextChar === '.') {
+                index += 1;
+                number += nextChar;
+              } else {
+                break;
+              }
+            }
+
+            if (number.split('.').length > 2) {
+              throw new Error('Некорректное число');
+            }
+
+            tokens.push(Number(number));
+            prevType = 'number';
+            continue;
+          }
+
+          if (char === '(') {
+            tokens.push('(');
+            prevType = 'open';
+            continue;
+          }
+
+          if (char === ')') {
+            tokens.push(')');
+            prevType = 'close';
+            continue;
+          }
+
+          if (isOperator(char)) {
+            if (char === '-' && (prevType === 'start' || prevType === 'op' || prevType === 'open')) {
+              tokens.push('u-');
+            } else if (char === '+' && (prevType === 'start' || prevType === 'op' || prevType === 'open')) {
+              tokens.push('u+');
+            } else {
+              tokens.push(char);
+            }
+            prevType = 'op';
+            continue;
+          }
+
+          throw new Error('Некорректный символ');
+        }
+
+        return tokens;
+      }
+
+      function precedence(operator) {
+        if (operator === '+' || operator === '-') {
+          return 1;
+        }
+        if (operator === '*' || operator === '/' || operator === '%') {
+          return 2;
+        }
+        if (operator === 'u-' || operator === 'u+') {
+          return 3;
+        }
+        return 0;
+      }
+
+      function isRightAssociative(operator) {
+        return operator === 'u-' || operator === 'u+';
+      }
+
+      function toPostfix(tokens) {
+        const output = [];
+        const operators = [];
+
+        function popWhileTopOperatorHasHigherPrecedence(currentOperator) {
+          while (operators.length > 0) {
+            const topOperator = operators[operators.length - 1];
+            if (topOperator === '(') {
+              break;
+            }
+
+            const currentPrecedence = precedence(currentOperator);
+            const topPrecedence = precedence(topOperator);
+
+            if (
+              topPrecedence > currentPrecedence ||
+              (topPrecedence === currentPrecedence && !isRightAssociative(currentOperator))
+            ) {
+              output.push(operators.pop());
+            } else {
+              break;
+            }
+          }
+        }
+
+        tokens.forEach(function (token) {
+          if (typeof token === 'number') {
+            output.push(token);
+            return;
+          }
+
+          if (token === '(') {
+            operators.push(token);
+            return;
+          }
+
+          if (token === ')') {
+            while (operators.length > 0 && operators[operators.length - 1] !== '(') {
+              output.push(operators.pop());
+            }
+
+            if (operators.length === 0) {
+              throw new Error('Несбалансированные скобки');
+            }
+
+            operators.pop();
+            return;
+          }
+
+          if (typeof token === 'string' && ['+', '-', '*', '/', '%', 'u-', 'u+'].indexOf(token) !== -1) {
+            popWhileTopOperatorHasHigherPrecedence(token);
+            operators.push(token);
+          }
+        });
+
+        while (operators.length > 0) {
+          const op = operators.pop();
+          if (op === '(') {
+            throw new Error('Несбалансированные скобки');
+          }
+          output.push(op);
+        }
+
+        return output;
+      }
+
+      function evaluatePostfix(postfixTokens) {
+        const stack = [];
+
+        postfixTokens.forEach(function (token) {
+          if (typeof token === 'number') {
+            stack.push(token);
+            return;
+          }
+
+          if (token === 'u-') {
+            const value = stack.pop();
+            if (typeof value === 'undefined') {
+              throw new Error('Некорректное выражение');
+            }
+            stack.push(-value);
+            return;
+          }
+
+          if (token === 'u+') {
+            const value = stack.pop();
+            if (typeof value === 'undefined') {
+              throw new Error('Некорректное выражение');
+            }
+            stack.push(value);
+            return;
+          }
+
+          if (token === '%') {
+            const value = stack.pop();
+            if (typeof value === 'undefined') {
+              throw new Error('Некорректное выражение');
+            }
+            stack.push(value / 100);
+            return;
+          }
+
+          const right = stack.pop();
+          const left = stack.pop();
+
+          if (typeof left === 'undefined' || typeof right === 'undefined') {
+            throw new Error('Некорректное выражение');
+          }
+
+          if (token === '+') {
+            stack.push(left + right);
+            return;
+          }
+
+          if (token === '-') {
+            stack.push(left - right);
+            return;
+          }
+
+          if (token === '*') {
+            stack.push(left * right);
+            return;
+          }
+
+          if (token === '/') {
+            if (right === 0) {
+              throw new Error('Деление на ноль');
+            }
+            stack.push(left / right);
+            return;
+          }
+
+          throw new Error('Неизвестный оператор');
+        });
+
+        if (stack.length !== 1) {
+          throw new Error('Некорректное выражение');
+        }
+
+        return stack[0];
+      }
+
+      function safeEvaluateExpression(expression) {
+        const normalized = expression
+          .replace(/\s+/g, '')
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/')
+          .replace(/%/g, '%');
+
+        if (!normalized) {
+          throw new Error('Пустое выражение');
+        }
+
+        const tokens = tokenize(normalized);
+        const postfix = toPostfix(tokens);
+        return evaluatePostfix(postfix);
+      }
+
+      function calculate() {
+        const expression = elements.expressionDisplay.textContent.trim();
+        if (!expression || expression === '0') {
+          return;
+        }
+
+        try {
+          const value = safeEvaluateExpression(expression);
+          const formatted = formatResultForCalculator(value);
+          elements.resultDisplay.textContent = formatted;
+          addHistoryEntry({
+            type: 'calculator',
+            expression: formatExpressionForDisplay(expression),
+            result: formatted
+          });
+        } catch (error) {
+          const message = error && error.message ? error.message : 'Ошибка расчёта';
+          elements.resultDisplay.textContent = message;
+        }
+      }
+
+      function clearCalculator() {
+        elements.expressionDisplay.textContent = '0';
+        elements.resultDisplay.textContent = '0';
+      }
+
+      function deleteLastCalculatorSymbol() {
+        const expression = elements.expressionDisplay.textContent;
+        if (expression === '0') {
+          return;
+        }
+
+        if (expression.length <= 1) {
+          clearCalculator();
+          return;
+        }
+
+        const newExpression = expression.slice(0, -1);
+        elements.expressionDisplay.textContent = newExpression || '0';
+      }
+
+      function appendDigit(value) {
+        const expression = elements.expressionDisplay.textContent;
+        if (expression === '0') {
+          elements.expressionDisplay.textContent = value;
+          return;
+        }
+
+        if (expression === 'Деление на ноль' || expression === 'Ошибка расчёта') {
+          elements.expressionDisplay.textContent = value;
+          return;
+        }
+
+        elements.expressionDisplay.textContent += value;
+      }
+
+      function appendOperator(operatorSymbol) {
+        const expression = elements.expressionDisplay.textContent;
+
+        if (expression === '0' && operatorSymbol !== '-') {
+          return;
+        }
+
+        if (expression === 'Деление на ноль' || expression === 'Ошибка расчёта') {
+          elements.expressionDisplay.textContent = operatorSymbol === '-' ? '-' : '0';
+          return;
+        }
+
+        const lastChar = expression.slice(-1);
+        if (['+', '-', '*', '/', '%'].indexOf(lastChar) !== -1) {
+          elements.expressionDisplay.textContent = expression.slice(0, -1) + operatorSymbol;
+          return;
+        }
+
+        elements.expressionDisplay.textContent += operatorSymbol;
+      }
+
+      function appendDecimal() {
+        const expression = elements.expressionDisplay.textContent;
+        if (expression === '0') {
+          elements.expressionDisplay.textContent = '0.';
+          return;
+        }
+
+        if (expression === 'Деление на ноль' || expression === 'Ошибка расчёта') {
+          elements.expressionDisplay.textContent = '0.';
+          return;
+        }
+
+        const match = expression.match(/(?:^|[+\-*/])([^+\-*/]*)$/);
+        const currentNumber = match ? match[1] : expression;
+        if (currentNumber.indexOf('.') === -1) {
+          elements.expressionDisplay.textContent += '.';
+        }
+      }
+
+      function togglePercent() {
+        const expression = elements.expressionDisplay.textContent;
+
+        if (!expression || expression === '0' || expression === 'Деление на ноль' || expression === 'Ошибка расчёта') {
+          return;
+        }
+
+        if (/[+\-*/]$/.test(expression)) {
+          return;
+        }
+
+        elements.expressionDisplay.textContent += '%';
+      }
+
+      function toggleSign() {
+        const expression = elements.expressionDisplay.textContent;
+
+        if (!expression || expression === '0' || expression === 'Деление на ноль' || expression === 'Ошибка расчёта') {
+          elements.expressionDisplay.textContent = '-';
+          return;
+        }
+
+        const numberMatch = expression.match(/(-?\d*\.?\d+)(?!.*-?\d*\.?\d+)$/);
+        if (numberMatch) {
+          const value = numberMatch[1];
+          const toggled = value.startsWith('-') ? value.slice(1) : '-' + value;
+          elements.expressionDisplay.textContent = expression.slice(0, -value.length) + toggled;
+          return;
+        }
+
+        elements.expressionDisplay.textContent += '-';
+      }
+
+      function keyHandler(event) {
+        if (state.activeView !== 'calculator') {
+          return;
+        }
+
+        const key = event.key;
+
+        if (/^[0-9]$/.test(key)) {
+          appendDigit(key);
+          return;
+        }
+
+        if (key === '.') {
+          appendDecimal();
+          return;
+        }
+
+        if (key === '+' || key === '-' || key === '*' || key === '/') {
+          appendOperator(key === '*' ? '*' : key);
+          return;
+        }
+
+        if (key === 'Enter') {
+          event.preventDefault();
+          calculate();
+          return;
+        }
+
+        if (key === 'Backspace') {
+          event.preventDefault();
+          deleteLastCalculatorSymbol();
+          return;
+        }
+
+        if (key === 'Escape') {
+          event.preventDefault();
+          clearCalculator();
+        }
+      }
+
+      function initializeCalculatorButtons() {
+        elements.calculatorButtons.forEach(function (button) {
+          button.addEventListener('click', function () {
+            const action = button.dataset.action;
+            const value = button.dataset.value;
+
+            if (action === 'digit') {
+              appendDigit(value);
+              return;
+            }
+
+            if (action === 'operator') {
+              appendOperator(value);
+              return;
+            }
+
+            if (action === 'decimal') {
+              appendDecimal();
+              return;
+            }
+
+            if (action === 'clear') {
+              clearCalculator();
+              return;
+            }
+
+            if (action === 'delete') {
+              deleteLastCalculatorSymbol();
+              return;
+            }
+
+            if (action === 'percent') {
+              togglePercent();
+              return;
+            }
+
+            if (action === 'negate') {
+              toggleSign();
+              return;
+            }
+
+            if (action === 'equals') {
+              calculate();
+            }
+          });
+        });
+      }
+
+      function updateConverterResult() {
+        const rawValue = elements.fromValue.value.trim();
+
+        if (rawValue === '') {
+          elements.converterResult.textContent = 'Введите число';
+          return;
+        }
+
+        const normalized = rawValue.replace(',', '.');
+        const numberValue = Number(normalized);
+
+        if (!Number.isFinite(numberValue)) {
+          elements.converterResult.textContent = 'Введите число';
+          return;
+        }
+
+        const category = elements.converterCategory.value;
+        const fromUnit = elements.fromUnit.value;
+        const toUnit = elements.toUnit.value;
+
+        const converted = convertValue(category, fromUnit, toUnit, numberValue);
+        elements.converterResult.textContent = formatConvertedResult(converted);
+      }
+
+      function convertValue(category, fromUnit, toUnit, value) {
+        if (category === 'temperature') {
+          return convertTemperature(value, fromUnit, toUnit);
+        }
+
+        if (category === 'currency') {
+          return convertCurrencyValue(value, fromUnit, toUnit);
+        }
+
+        const categoryConfig = categoryMeta[category];
+        const fromFactor = categoryConfig.units[fromUnit].factor;
+        const toFactor = categoryConfig.units[toUnit].factor;
+
+        const base = value * fromFactor;
+        return base / toFactor;
+      }
+
+      function convertTemperature(value, fromUnit, toUnit) {
+        let celsius = value;
+
+        if (fromUnit === 'f') {
+          celsius = (value - 32) * 5 / 9;
+        } else if (fromUnit === 'k') {
+          celsius = value - 273.15;
+        }
+
+        if (toUnit === 'c') {
+          return celsius;
+        }
+
+        if (toUnit === 'f') {
+          return celsius * 9 / 5 + 32;
+        }
+
+        return celsius + 273.15;
+      }
+
+      function convertCurrencyValue(value, fromUnit, toUnit) {
+        const rates = categoryMeta.currency.units;
+
+        const usdValue = value * rates[fromUnit].rate;
+        return usdValue / rates[toUnit].rate;
+      }
+
+      function formatConvertedResult(value) {
+        if (!Number.isFinite(value)) {
+          return 'Введите число';
+        }
+
+        if (Math.abs(value) === 0) {
+          return '0';
+        }
+
+        const rounded = Number(value.toPrecision(6));
+        const result = String(rounded).replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
+        return result;
+      }
+
+      function populateCategoryOptions() {
+        const fragment = document.createDocumentFragment();
+
+        Object.keys(categoryMeta).forEach(function (key) {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = categoryMeta[key].label;
+          fragment.appendChild(option);
+        });
+
+        elements.converterCategory.innerHTML = '';
+        elements.converterCategory.appendChild(fragment);
+      }
+
+      function populateUnitOptions() {
+        const category = elements.converterCategory.value;
+        const units = categoryMeta[category].units;
+
+        const fromFragment = document.createDocumentFragment();
+        const toFragment = document.createDocumentFragment();
+
+        Object.keys(units).forEach(function (key) {
+          const optionFrom = document.createElement('option');
+          optionFrom.value = key;
+          optionFrom.textContent = units[key].label;
+          fromFragment.appendChild(optionFrom);
+
+          const optionTo = document.createElement('option');
+          optionTo.value = key;
+          optionTo.textContent = units[key].label;
+          toFragment.appendChild(optionTo);
+        });
+
+        elements.fromUnit.innerHTML = '';
+        elements.toUnit.innerHTML = '';
+
+        elements.fromUnit.appendChild(fromFragment);
+        elements.toUnit.appendChild(toFragment);
+
+        const firstKey = Object.keys(units)[0];
+        const secondKey = Object.keys(units)[1] || firstKey;
+
+        elements.fromUnit.value = firstKey;
+        elements.toUnit.value = secondKey;
+      }
+
+      function swapUnits() {
+        const fromValue = elements.fromUnit.value;
+        const toValue = elements.toUnit.value;
+
+        elements.fromUnit.value = toValue;
+        elements.toUnit.value = fromValue;
+
+        updateConverterResult();
+      }
+
+      function updateRates() {
+        const currencyUnits = categoryMeta.currency.units;
+        currencyUnits.usd.rate = 1;
+        currencyUnits.eur.rate = 1.08;
+        currencyUnits.rub.rate = 0.011;
+        currencyUnits.gbp.rate = 1.27;
+        currencyUnits.jpy.rate = 0.0064;
+        currencyUnits.cny.rate = 0.138;
+      }
+
+      function initializeConverter() {
+        populateCategoryOptions();
+        populateUnitOptions();
+
+        elements.converterCategory.addEventListener('change', function () {
+          populateUnitOptions();
+          updateConverterResult();
+        });
+
+        elements.fromUnit.addEventListener('change', updateConverterResult);
+        elements.toUnit.addEventListener('change', updateConverterResult);
+        elements.fromValue.addEventListener('input', updateConverterResult);
+        elements.swapUnits.addEventListener('click', swapUnits);
+
+        elements.fromValue.value = '1';
+        updateConverterResult();
+      }
+
+      function initializeHistory() {
+        renderHistory();
+      }
+
+      function initializeEvents() {
+        elements.themeToggle.addEventListener('change', function () {
+          setTheme(this.checked ? 'dark' : 'light');
+        });
+
+        elements.viewButtons.forEach(function (button) {
+          button.addEventListener('click', function () {
+            setActiveView(button.dataset.view);
+          });
+        });
+
+        document.addEventListener('keydown', keyHandler);
+
+        elements.clearHistory.addEventListener('click', clearHistory);
+
+        initializeCalculatorButtons();
+      }
+
+      function initializeApp() {
+        initializeTheme();
+        initializeEvents();
+        initializeConverter();
+        initializeHistory();
+        setActiveView('calculator');
+      }
+
+      updateRates();
+      initializeApp();
+    })();
+  </script>
+</body>
+</html>
